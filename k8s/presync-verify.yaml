@@ -1,27 +1,28 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: presync-cosign-verify
+  generateName: presync-cosign-verify-   # <— NEW: let K8s mint a new name each sync
   namespace: gitops-demo
   annotations:
     argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    # delete old hook Jobs so we never try to patch an existing one
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed,HookSucceeded
 spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 120
   template:
     spec:
       restartPolicy: Never
-      # Use an image that includes 'cosign' binary
       containers:
         - name: cosign-verify
           image: ghcr.io/sigstore/cosign/cosign:v2.2.4
-          # NOTE: args are replaced by CI to include the exact ref
           args:
             - "verify"
             - "--certificate-oidc-issuer"
             - "https://token.actions.githubusercontent.com"
             - "--certificate-identity-regexp"
             - "https://github.com/UnpredictablePrashant/GitOpsDemoA/.+"
-            - "__IMAGE_REF__"
+            - "__IMAGE_REF__"  # CI replaces this with the exact digest
           env:
             - name: COSIGN_EXPERIMENTAL
               value: "true"
