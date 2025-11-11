@@ -5,12 +5,11 @@ metadata:
   namespace: gitops-demo
   annotations:
     argocd.argoproj.io/hook: PreSync
-    # Ensure Argo deletes the previous hook Job before creating a new one,
-    # so we never try to patch an existing Job (which would hit immutability).
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookFailed,HookSucceeded
+    # keep failed hooks so we can read logs; still clean up old ones before next run
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
 spec:
   backoffLimit: 0
-  ttlSecondsAfterFinished: 120
+  ttlSecondsAfterFinished: 1800   # keep for 30 min
   template:
     spec:
       restartPolicy: Never
@@ -23,7 +22,7 @@ spec:
             - "https://token.actions.githubusercontent.com"
             - "--certificate-identity-regexp"
             - "https://github.com/UnpredictablePrashant/GitOpsDemoA/.+"
-            - "__IMAGE_REF__"  # CI step replaces this with the exact digest
+            - "__IMAGE_REF__"   # CI replaces this with the exact digest
           env:
             - name: COSIGN_EXPERIMENTAL
               value: "true"
