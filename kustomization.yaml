@@ -7,5 +7,6 @@ resources:
   - k8s/service.yaml
   - k8s/presync-verify.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: gitops-secure-demo
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: gitops-secure-demo
